@@ -1,0 +1,95 @@
+﻿apiVersion: batch/v1
+kind: Job
+metadata:
+  name: teacher-shard-0-v2
+  namespace: pipeline
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: worker
+          image: command-worker:v2
+          imagePullPolicy: Never
+          env:
+            - name: SHARD_INDEX
+              value: "0"
+            - name: SHARD_COUNT
+              value: "2"
+            - name: OUTPUT_KEY
+              value: "teacher/shard-0.jsonl"
+            - name: CHECKPOINT_KEY
+              value: "teacher/checkpoints/shard-0.jsonl"
+            - name: CHECKPOINT_INTERVAL
+              value: "10"
+            - name: OLLAMA_URL
+              value: "http://host.docker.internal:11434/api/generate"
+            - name: S3_ENDPOINT
+              value: "http://seaweedfs-s3.data.svc.cluster.local:8333"
+          envFrom:
+            - secretRef:
+                name: seaweedfs-s3-credentials
+          volumeMounts:
+            - name: teacher-prompt
+              mountPath: /app/prompts
+              readOnly: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: teacher-prompt
+          configMap:
+            name: teacher-prompt
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: teacher-shard-1-v2
+  namespace: pipeline
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: worker
+          image: command-worker:v2
+          imagePullPolicy: Never
+          env:
+            - name: SHARD_INDEX
+              value: "1"
+            - name: SHARD_COUNT
+              value: "2"
+            - name: OUTPUT_KEY
+              value: "teacher/shard-1.jsonl"
+            - name: CHECKPOINT_KEY
+              value: "teacher/checkpoints/shard-1.jsonl"
+            - name: CHECKPOINT_INTERVAL
+              value: "10"
+            - name: OLLAMA_URL
+              value: "http://host.docker.internal:11434/api/generate"
+            - name: S3_ENDPOINT
+              value: "http://seaweedfs-s3.data.svc.cluster.local:8333"
+          envFrom:
+            - secretRef:
+                name: seaweedfs-s3-credentials
+          volumeMounts:
+            - name: teacher-prompt
+              mountPath: /app/prompts
+              readOnly: true
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: teacher-prompt
+          configMap:
+            name: teacher-prompt

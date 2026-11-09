@@ -1,0 +1,30 @@
+
+# Python environment
+.venv/
+__pycache__/
+*.pyc
+
+# Model weights and checkpoints
+models/
+*.safetensors
+*.pt
+*.pth
+checkpoint-*/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*credentials*
+secrets/
+
+# Temporary and generated files
+*.log
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+
+# Large generated training outputs
+results/*.jsonl
+results/*.pt
+results/*.safetensors

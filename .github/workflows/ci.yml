@@ -1,0 +1,39 @@
+﻿name: Cloud Project CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Python syntax
+        run: |
+          python -m compileall -q tools scripts training service
+
+      - name: Validate NACL rules
+        run: |
+          python tools/nacl_sim.py network/nacl.json network/packets_sample.jsonl --check > nacl-output.txt
+          cat nacl-output.txt
+          grep -q "Correct: 6 / 6 = 100.0%" nacl-output.txt
+
+      - name: Verify scoring script
+        run: |
+          python tools/score.py --help
+
+      - name: Verify training script
+        run: |
+          python training/train.py --help

@@ -1,0 +1,78 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: command-parser
+  namespace: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: command-parser
+  template:
+    metadata:
+      labels:
+        app: command-parser
+    spec:
+      containers:
+        - name: parser
+          image: command-parser:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MODEL_DIR
+              value: /models/student
+            - name: MODEL_VERSION
+              value: pythia-70m-student
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: command-parser
+  namespace: app
+spec:
+  selector:
+    app: command-parser
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: command-parser-hpa
+  namespace: app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: command-parser
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
